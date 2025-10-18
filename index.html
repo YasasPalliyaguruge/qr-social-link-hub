@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR Social Link Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+          "react/": "https://aistudiocdn.com/react@^19.2.0/",
+          "react": "https://aistudiocdn.com/react@^19.2.0"
+        }
+      }
+    </script>
+    <style>
+      @keyframes slide-in-from-bottom {
+        0% {
+          transform: translateY(50px) rotateX(-30deg);
+          opacity: 0;
+        }
+        100% {
+          transform: translateY(0) rotateX(0deg);
+          opacity: 1;
+        }
+      }
+      @keyframes gradient-animation {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      .animate-slide-in {
+        animation: slide-in-from-bottom 0.8s ease-out forwards;
+      }
+      .perspective-1000 {
+        perspective: 1000px;
+      }
+      body {
+        background: linear-gradient(to bottom, #374151, #111827);
+      }
+    </style>
+  <link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
