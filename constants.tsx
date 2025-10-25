@@ -65,7 +65,7 @@ export const CONTACT_LINKS: SocialLink[] = [
   },
   {
     name: 'Phone',
-    url: 'tel:0766919362',
+    url: 'tel:0766919358',
     icon: <PhoneIcon />,
     bgColor: 'bg-white/20',
     hoverBgColor: 'hover:bg-white/30',
