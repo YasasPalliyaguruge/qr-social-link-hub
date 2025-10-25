@@ -141,7 +141,7 @@ const FlipCard = ({ children }: { children: React.ReactNode }) => {
                 We are your trusted partners in making your Canadian dream a reality.
               </p>
               <div className="text-xs opacity-60">
-                <p>📞 Contact: 076-691-9362</p>
+                <p>📞 Contact: 076-691-9358</p>
                 <p>📧 Email: info@migratetocanada.com</p>
                 <p>🌐 www.migrateto-canada.com</p>
               </div>
