@@ -30,7 +30,7 @@ const WebsiteIcon = () => (
 export const PRIMARY_LINKS: SocialLink[] = [
   {
     name: 'Facebook',
-    url: 'https://www.facebook.com/share/1BkuYZrem4/?mibextid=wwXIfr',
+    url: 'https://www.facebook.com/share/1WAB2u65Pr/?mibextid=wwXIfr',
     icon: <FacebookIcon />,
     bgColor: 'bg-[#1877F2]',
     hoverBgColor: 'hover:bg-[#166eab]',
