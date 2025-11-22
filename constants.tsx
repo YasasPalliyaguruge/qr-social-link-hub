@@ -46,7 +46,7 @@ export const PRIMARY_LINKS: SocialLink[] = [
   },
   {
     name: 'TikTok',
-    url: 'https://www.tiktok.com/@canadagatewayimmigration?_t=ZG-90e8ZZgyix7&_r=1',
+    url: 'https://www.tiktok.com/@globalimmigateway?_r=1&_t=ZG-91bS1KhE1PE',
     icon: <TikTokIcon />,
     bgColor: 'bg-black',
     hoverBgColor: 'hover:bg-gray-800',
