@@ -1,0 +1,5 @@
+{
+  "name": "QR Social Link Hub",
+  "description": "A dynamic landing page for social media links, designed to be accessed via a QR code. Users can see a profile and click to visit various social media pages.",
+  "requestFramePermissions": []
+}
