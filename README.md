@@ -1,20 +1,18 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# QR Social Link Hub
 
-# Run and deploy your AI Studio app
+![QR Social Link Hub project cover](assets/recruiter/cover.png)
 
-This contains everything you need to run your app locally.
+> **Portfolio lens:** A deliberately compact destination page where the visual assets and social paths do the work—ideal for a QR-led first impression.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1hM8JidSVm9e8P1bJEo6jLIwypXoCwuJr
+This is a single-page link hub meant to sit behind a QR code. It combines a profile card, social destinations, a background video, and a small set of visual assets rather than sending visitors through a full website.
 
-## Run Locally
+The profile content lives in the React source, while the video and image files are intentionally kept in the repository because the page references them at runtime.
 
-**Prerequisites:**  Node.js
+## Run it
 
+```bash
+npm ci
+npm run dev
+```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Use `npm run build` for the production bundle and `npm run preview` to check that bundle before publishing. The project uses React, TypeScript, and Vite.
