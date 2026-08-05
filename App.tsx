@@ -1,112 +1,152 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import SocialLinkButton from './components/SocialLinkButton';
-import { PRIMARY_LINKS, CONTACT_LINKS } from './constants';
+import { CONTACT_LINKS, PRIMARY_LINKS, PROFILE } from './constants';
 
 const StarIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    stroke="currentColor"
+    strokeWidth="0.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
     <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
   </svg>
 );
 
-// Video Background Component
+const usePrefersReducedMotion = () => {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const updatePreference = () => setPrefersReducedMotion(mediaQuery.matches);
+
+    updatePreference();
+    mediaQuery.addEventListener('change', updatePreference);
+    return () => mediaQuery.removeEventListener('change', updatePreference);
+  }, []);
+
+  return prefersReducedMotion;
+};
+
 const VideoBackground = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
     const video = videoRef.current;
-    if (video) {
-      console.log("Video element found:", video);
-      
-      // Add event listeners for debugging
-      video.addEventListener('loadstart', () => console.log("Video loading started"));
-      video.addEventListener('loadeddata', () => console.log("Video data loaded"));
-      video.addEventListener('canplay', () => console.log("Video can play"));
-      video.addEventListener('error', (e) => console.error("Video error:", e));
-      
-      // Force video to play immediately
-      const playPromise = video.play();
-      if (playPromise !== undefined) {
-        playPromise.then(() => {
-          console.log("Video started playing successfully");
-        }).catch(error => {
-          console.log("Auto-play was prevented:", error);
-          // Fallback: try to play after user interaction
-          const handleUserInteraction = () => {
-            console.log("Attempting to play after user interaction");
-            video.play().then(() => {
-              console.log("Video started playing after interaction");
-            }).catch(e => console.log("Play after interaction failed:", e));
-            document.removeEventListener('click', handleUserInteraction);
-            document.removeEventListener('touchstart', handleUserInteraction);
-          };
-          document.addEventListener('click', handleUserInteraction);
-          document.addEventListener('touchstart', handleUserInteraction);
-        });
-      }
+    if (!video) return;
+
+    if (prefersReducedMotion) {
+      video.pause();
+      return;
     }
-  }, []);
+
+    let interactionListenersAttached = false;
+
+    const removeInteractionListeners = () => {
+      if (!interactionListenersAttached) return;
+      document.removeEventListener('click', handleUserInteraction);
+      document.removeEventListener('touchstart', handleUserInteraction);
+      interactionListenersAttached = false;
+    };
+
+    const playVideo = async () => {
+      try {
+        await video.play();
+        removeInteractionListeners();
+      } catch {
+        if (!interactionListenersAttached) {
+          document.addEventListener('click', handleUserInteraction, {
+            once: true,
+            passive: true,
+          });
+          document.addEventListener('touchstart', handleUserInteraction, {
+            once: true,
+            passive: true,
+          });
+          interactionListenersAttached = true;
+        }
+      }
+    };
+
+    function handleUserInteraction() {
+      void playVideo();
+    }
+
+    void playVideo();
+    return removeInteractionListeners;
+  }, [prefersReducedMotion]);
 
   return (
-    <div className="absolute inset-0 overflow-hidden">
+    <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
       <video
         ref={videoRef}
-        className="w-full h-full object-cover opacity-50"
-        autoPlay
+        className="h-full w-full object-cover opacity-50"
+        autoPlay={!prefersReducedMotion}
         loop
         muted
         playsInline
-        preload="auto"
+        preload="metadata"
+        tabIndex={-1}
         style={{
           filter: 'blur(1px) brightness(0.8)',
           transform: 'scale(1.05)',
           position: 'absolute',
-          top: 0,
-          left: 0,
+          inset: 0,
           width: '100%',
           height: '100%',
-          zIndex: 1
+          zIndex: 1,
         }}
       >
-        {/* Using local video file */}
-        <source src="/video/Download.mp4" type="video/mp4" />
-        {/* Fallback for browsers that don't support video */}
-        Your browser does not support the video tag.
+        <source src={PROFILE.backgroundVideoSrc} type="video/mp4" />
       </video>
-      {/* Overlay to ensure content readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-gray-700/40 to-gray-900/60" style={{ zIndex: 2 }}></div>
+      <div
+        className="absolute inset-0 bg-gradient-to-b from-gray-700/40 to-gray-900/60"
+        style={{ zIndex: 2 }}
+      />
     </div>
   );
 };
 
-// Typing Animation Hook
-const useTypingText = (text: string, speed: number = 50) => {
+const useTypingText = (text: string, speed = 50) => {
   const [displayText, setDisplayText] = useState('');
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [startTyping, setStartTyping] = useState(false);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
-    // Start typing after 1 second delay
-    const startTimeout = setTimeout(() => {
-      setStartTyping(true);
+    if (prefersReducedMotion) {
+      setDisplayText(text);
+      return undefined;
+    }
+
+    let currentIndex = 0;
+    let intervalId: number | undefined;
+
+    const startTimeout = window.setTimeout(() => {
+      intervalId = window.setInterval(() => {
+        currentIndex += 1;
+        setDisplayText(text.slice(0, currentIndex));
+
+        if (currentIndex >= text.length && intervalId !== undefined) {
+          window.clearInterval(intervalId);
+        }
+      }, speed);
     }, 1000);
 
-    return () => clearTimeout(startTimeout);
-  }, []);
-
-  useEffect(() => {
-    if (startTyping && currentIndex < text.length) {
-      const timeout = setTimeout(() => {
-        setDisplayText(prev => prev + text[currentIndex]);
-        setCurrentIndex(prev => prev + 1);
-      }, speed);
-      return () => clearTimeout(timeout);
-    }
-  }, [currentIndex, text, speed, startTyping]);
+    return () => {
+      window.clearTimeout(startTimeout);
+      if (intervalId !== undefined) window.clearInterval(intervalId);
+    };
+  }, [prefersReducedMotion, speed, text]);
 
   return displayText;
 };
 
-// Add custom styles for cool animation
 const customStyles = `
   @keyframes float {
     0%, 100% { transform: translateY(0px) scale(1); }
@@ -168,105 +208,129 @@ const customStyles = `
     font-weight: bold;
     font-size: 12px;
   }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-float-glow,
+    .animate-tilt-load,
+    .passport-stamp {
+      animation: none !important;
+    }
+  }
 `;
 
 const App: React.FC = () => {
-  const [passportStamps, setPassportStamps] = useState<{x: number, y: number, id: string}[]>([]);
-  const typingText = useTypingText("YOUR GATEWAY TO THE WORLD", 40);
+  const [passportStamps, setPassportStamps] = useState<
+    { x: number; y: number; id: string }[]
+  >([]);
+  const typingText = useTypingText(PROFILE.tagline, 40);
 
-  React.useEffect(() => {
-    const styleSheet = document.createElement("style");
+  useEffect(() => {
+    const styleSheet = document.createElement('style');
     styleSheet.textContent = customStyles;
     document.head.appendChild(styleSheet);
-    return () => {
-      document.head.removeChild(styleSheet);
-    };
+    return () => styleSheet.remove();
   }, []);
 
-  const handlePassportStamp = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const id = Date.now().toString();
+  const handlePassportStamp = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const stamp = {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+      id: crypto.randomUUID(),
+    };
 
-    setPassportStamps(prev => [...prev, { x, y, id }]);
-
-    setTimeout(() => {
-      setPassportStamps(prev => prev.filter(stamp => stamp.id !== id));
+    setPassportStamps((current) => [...current, stamp]);
+    window.setTimeout(() => {
+      setPassportStamps((current) =>
+        current.filter((currentStamp) => currentStamp.id !== stamp.id),
+      );
     }, 800);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-700 to-gray-900 flex items-center justify-center p-4 overflow-hidden relative">
-      {/* Video Background */}
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-b from-gray-700 to-gray-900 p-4">
       <VideoBackground />
 
-      <div className="w-full max-w-md relative z-10">
-        <div className="rounded-2xl shadow-2xl p-6 md:p-8 text-center border border-white/30 bg-white/20 backdrop-blur-xl animate-tilt-load">
-          {/* Profile Section */}
-          <div className="mb-8">
-            <div className="relative inline-block">
-              <img
-                src="/image/image.jpg?v=2"
-                alt="Global Immigateway Logo"
-                className="w-32 h-32 rounded-full mx-auto mb-4 border-4 border-white/30 shadow-lg object-cover"
-              />
-            </div>
+      <main className="relative z-10 w-full max-w-md">
+        <div className="animate-tilt-load rounded-2xl border border-white/30 bg-white/20 p-6 text-center shadow-2xl backdrop-blur-xl md:p-8">
+          <header className="mb-8">
+            <img
+              src={PROFILE.logoSrc}
+              alt={`${PROFILE.name} logo`}
+              className="mx-auto mb-4 h-32 w-32 rounded-full border-4 border-white/30 object-cover shadow-lg"
+            />
             <h1 className="text-2xl font-bold tracking-tight text-white">
-              Global Immigateway
+              {PROFILE.name}
             </h1>
-            <p className="text-md text-slate-300 mt-1 h-6">
-              {typingText}
-              <span className="animate-pulse">|</span>
+            <p className="mt-1 h-6 text-md text-slate-300">
+              <span className="sr-only">{PROFILE.tagline}</span>
+              <span aria-hidden="true">
+                {typingText}
+                <span className="animate-pulse motion-reduce:animate-none">|</span>
+              </span>
             </p>
-          </div>
+          </header>
 
-          {/* Action Links */}
           <div className="space-y-4">
             <a
-              href="https://www.google.com/search?sca_esv=6e20e6c2949c4c68&rlz=1CDGOYI_enLK1016LK1016&hl=en-US&q=canada+gateway+immigration+consultants+reviews&uds=AOm0WdHmhxkZ4wIyCKRo0CHUx4u1LX9wtC_AsCGNWYyXJ-udYBgANhBNvJZT2Eb5b9t0VpP1Mx6Woshh--wwz4G_rzGxBRYeZQkGZ-APkO1dDbqbtDbvl57YF5wr0aMmERSHfB11hPWK5-Fpj600pnEAjL6ecNxKQ8Jx2Hra99uS4L6Hi5rG2Tjh41dtlrXYt6NEcoPe_QKgDXtx4_29d94pPXA53p_EjEiXZrzxtPELbt_RiqMCClJHuOjdAC11kNH5j_VRen59Mg1fSx17EHw1S-tMiN_jtzdcKZrQ9MAL7EArowpCk2fCi24CUBzyeEZ4nH1lI45hMGND1-RY0Bgr2eGaJpGX_M7ASR5IR9FDYt1T7dsqKKqcOEGi5CBJRFw1sGeIEkytVRmox-7mwc_k4ujObKI4JJ0Ix3fhmIF2BiYtbdPne1VfjyzIaQd1cDrGxLWE3Hh_sxE7uCUZGqro6pG7-2Eu5Ug00zzLZgq8Y8KjrkF_PcUu9whjDirl68p2losXO4F2&si=AMgyJEtREmoPL4P1I5IDCfuA8gybfVI2d5Uj7QMwYCZHKDZ-EyKY2nbymmA8pZNHMPPf-oX6TbZPIB51M_Lh0ojFE_W3zkoj__xFJwYDSgLuGMbl3wEq2din22UhXqIc_zrjeY-nqFu42FHC8ZrGo058vFuIMUy3-P-xTQWvVnn0tqCegWEo4Q0%3D&sa=X&ved=2ahUKEwj8j5vnsa2QAxUXjGMGHe2eLykQk8gLegQIGhAB&ictx=1&stq=1&cs=1&lei=slfzaPzuG5eYjuMP7b2-yQI#ebo=2"
+              href={PROFILE.reviewUrl}
               target="_blank"
               rel="noopener noreferrer"
               onClick={handlePassportStamp}
-              className="group relative flex items-center justify-center w-full p-4 rounded-xl transition-all duration-300 ease-in-out transform hover:scale-105 font-bold text-lg shadow-xl bg-yellow-600 hover:bg-yellow-700 text-white overflow-hidden"
+              className="group relative flex w-full transform items-center justify-center overflow-hidden rounded-xl bg-yellow-600 p-4 text-lg font-bold text-white shadow-xl transition-all duration-300 ease-in-out hover:scale-105 hover:bg-yellow-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-yellow-700 motion-reduce:transform-none"
             >
-              <span className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></span>
-              <span className="mr-3 relative z-10"><StarIcon /></span>
+              <span className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:bg-white group-hover:opacity-20" />
+              <span className="relative z-10 mr-3">
+                <StarIcon />
+              </span>
               <span className="relative z-10">Add a Review</span>
+              {passportStamps.map((stamp) => (
+                <span
+                  key={stamp.id}
+                  className="passport-stamp"
+                  style={{ left: stamp.x - 20, top: stamp.y - 20 }}
+                  aria-hidden="true"
+                >
+                  GO
+                </span>
+              ))}
             </a>
 
-            <div className="text-center py-4">
-              <p className="text-3xl font-bold text-white animate-pulse">Follow us on our social media!!</p>
+            <div className="py-4 text-center">
+              <p className="text-3xl font-bold text-white">
+                Follow us on social media
+              </p>
             </div>
 
             {PRIMARY_LINKS.map((link) => (
               <SocialLinkButton key={link.name} link={link} />
             ))}
 
-            {/* Contact Links */}
-            <div className="mt-6 flex justify-center space-x-4">
-                {CONTACT_LINKS.map((link) => (
+            <nav className="mt-6 flex justify-center space-x-4" aria-label="Contact options">
+              {CONTACT_LINKS.map((link) => {
+                const opensNewTab = link.url.startsWith('http');
+                return (
                   <a
                     key={link.name}
                     href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    target={opensNewTab ? '_blank' : undefined}
+                    rel={opensNewTab ? 'noopener noreferrer' : undefined}
                     className={`
-                      relative flex items-center justify-center w-12 h-12 rounded-full
-                      transition-all duration-300 ease-in-out transform hover:scale-110
-                      shadow-lg
-                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500
+                      relative flex h-12 w-12 transform items-center justify-center rounded-full
+                      shadow-lg transition-all duration-300 ease-in-out hover:scale-110
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white
+                      focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 motion-reduce:transform-none
                       ${link.bgColor} ${link.hoverBgColor} ${link.textColor}
                     `}
                     aria-label={link.name}
                   >
                     {link.icon}
                   </a>
-                ))}
-            </div>
+                );
+              })}
+            </nav>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
